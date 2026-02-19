@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Roulette Casino{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Welkom, {{ user.username }}! 👋</h1>
+
+    <div class="dashboard-grid">
+        <div class="stats-card">
+            <div class="stat-item">
+                <span class="stat-label">Tegoed:</span>
+                <span class="stat-value balance">€{{ "%.2f"|format(user.currency) }}</span>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <div class="stat-item">
+                <span class="stat-label">Totale spellen:</span>
+                <span class="stat-value">{{ stats.total_games }}</span>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <div class="stat-item">
+                <span class="stat-label">Winsten:</span>
+                <span class="stat-value wins">{{ stats.wins }}</span>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <div class="stat-item">
+                <span class="stat-label">Verliezen:</span>
+                <span class="stat-value losses">{{ stats.losses }}</span>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <div class="stat-item">
+                <span class="stat-label">Winst %:</span>
+                <span class="stat-value">{{ stats.win_rate }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('game') }}" class="btn btn-large btn-success">🎲 Start Spelen</a>
+        <a href="{{ url_for('history') }}" class="btn btn-large">Mijn Geschiedenis</a>
+    </div>
+
+    {% if recent_games %}
+    <div class="recent-games">
+        <h2>Recente Spellen</h2>
+        <table class="games-table">
+            <thead>
+                <tr>
+                    <th>Inzet</th>
+                    <th>Type</th>
+                    <th>Nummer</th>
+                    <th>Uitbetaling</th>
+                    <th>Resultaat</th>
+                    <th>Datum</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in recent_games %}
+                <tr class="result-{{ game.result }}">
+                    <td>€{{ "%.2f"|format(game.bet_amount) }}</td>
+                    <td>{{ game.bet_type }}</td>
+                    <td>{{ game.winning_number }}</td>
+                    <td>€{{ "%.2f"|format(game.payout) }}</td>
+                    <td><span class="badge badge-{{ game.result }}">{{ 'Win' if game.result == 'win' else 'Verlies' }}</span></td>
+                    <td>{{ game.created_at.strftime('%d-%m %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Account - Roulette Casino{% endblock %}
+
+{% block content %}
+<div class="account-container">
+    <h1>Mijn Account</h1>
+
+    <div class="account-grid">
+        <div class="account-card">
+            <h2>Accountinformatie</h2>
+            <div class="account-info">
+                <div class="info-item">
+                    <label>Gebruikersnaam:</label>
+                    <p>{{ user.username }}</p>
+                </div>
+                <div class="info-item">
+                    <label>E-mailadres:</label>
+                    <p>{{ user.email }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Tegoed:</label>
+                    <p class="balance">€{{ "%.2f"|format(user.currency) }}</p>
+                </div>
+                <div class="info-item">
+                    <label>Lid sinds:</label>
+                    <p>{{ user.created_at.strftime('%d-%m-%Y') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="account-card">
+            <h2>Wachtwoord wijzigen</h2>
+            <form id="passwordForm" class="password-form">
+                <div class="form-group">
+                    <label for="currentPassword">Huiidg wachtwoord:</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="newPassword">Nieuw wachtwoord:</label>
+                    <input type="password" id="newPassword" required>
+                    <small>Minimaal 6 tekens</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Bevestig wachtwoord:</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Wachtwoord wijzigen</button>
+            </form>
+            <div id="passwordMessage"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        showMessage('Wachtwoorden komen niet overeen', 'danger');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/update-account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(data.message, 'success');
+            document.getElementById('passwordForm').reset();
+        } else {
+            showMessage(data.error, 'danger');
+        }
+    } catch (error) {
+        showMessage('Fout opgetreden: ' + error, 'danger');
+    }
+});
+
+function showMessage(message, type) {
+    const messageDiv = document.getElementById('passwordMessage');
+    messageDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    setTimeout(() => {
+        messageDiv.innerHTML = '';
+    }, 5000);
+}
+</script>
+{% endblock %}

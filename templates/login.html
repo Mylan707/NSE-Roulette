@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Inloggen - Roulette Casino{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h1>Inloggen</h1>
+        
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            <div class="form-group">
+                <label for="email">E-mailadres:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Wachtwoord:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Inloggen</button>
+        </form>
+
+        <p class="auth-link">
+            Nog geen account? <a href="{{ url_for('register') }}">Registreer hier</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

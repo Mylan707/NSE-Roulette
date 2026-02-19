@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Spelgeschiedenis - Roulette Casino{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <h1>Mijn Spelgeschiedenis</h1>
+
+    {% if games %}
+    <div class="history-filters">
+        <input type="text" id="searchFilter" placeholder="Zoeken..." class="search-input">
+    </div>
+
+    <table class="games-table full-table">
+        <thead>
+            <tr>
+                <th>Datum & Tijd</th>
+                <th>Inzet</th>
+                <th>Inzettype</th>
+                <th>Waarde</th>
+                <th>Winning Nummer</th>
+                <th>Uitbetaling</th>
+                <th>Resultaat</th>
+                <th>Winst/Verlies</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for game in games %}
+            <tr class="result-{{ game.result }}">
+                <td>{{ game.created_at.strftime('%d-%m-%Y %H:%M:%S') }}</td>
+                <td>€{{ "%.2f"|format(game.bet_amount) }}</td>
+                <td>{{ game.bet_type }}</td>
+                <td>{{ game.bet_value }}</td>
+                <td><strong>{{ game.winning_number }}</strong></td>
+                <td>€{{ "%.2f"|format(game.payout) }}</td>
+                <td><span class="badge badge-{{ game.result }}">{{ 'Win' if game.result == 'win' else 'Verlies' }}</span></td>
+                <td class="amount-cell">
+                    {% if game.result == 'win' %}
+                        <span class="amount-win">+€{{ "%.2f"|format(game.payout - game.bet_amount) }}</span>
+                    {% else %}
+                        <span class="amount-loss">-€{{ "%.2f"|format(game.bet_amount) }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if games|length > 10 %}
+    <div class="pagination">
+        <!-- Voeg paginatie toe indien nodig -->
+        <p>Totaal {{ games|length }} spellen</p>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <p>Je hebt nog geen spellen gespeeld.</p>
+        <a href="{{ url_for('game') }}" class="btn btn-primary">Start nu spelen!</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Zoekfunctie
+document.getElementById('searchFilter').addEventListener('keyup', function(e) {
+    const filter = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('.games-table tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

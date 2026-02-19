@@ -60,17 +60,4 @@
     </div>
     {% endif %}
 </div>
-
-<script>
-// Zoekfunctie
-document.getElementById('searchFilter').addEventListener('keyup', function(e) {
-    const filter = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('.games-table tbody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
-    });
-});
-</script>
 {% endblock %}

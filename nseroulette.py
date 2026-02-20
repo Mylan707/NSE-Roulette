@@ -113,8 +113,7 @@ def calculate_payout(bet_type, bet_value, winning_number, bet_amount):
     return payout, win
 
 
-
-# ==================== ROUTES ====================
+# ==================== ROUTES 67====================
 
 @app.route('/')
 def index():
@@ -333,6 +332,42 @@ def update_account():
         return jsonify({'success': True, 'message': 'Wachtwoord gewijzigd'})
     
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/add-balance', methods=['POST'])
+@login_required
+def add_balance():
+    try:
+        data = request.json
+        amount = data.get('amount')
+        
+        if amount is None:
+            return jsonify({'error': 'Bedrag is verplicht'}), 400
+        
+        try:
+            amount = float(amount)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Ongeldig bedrag'}), 400
+        
+        if amount <= 0:
+            return jsonify({'error': 'Bedrag moet groter zijn dan 0'}), 400
+        
+        if amount > 100000:
+            return jsonify({'error': 'Bedrag kan niet groter zijn dan €100.000'}), 400
+        
+        user = User.query.get(session['user_id'])
+        user.currency += amount
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'new_balance': round(user.currency, 2),
+            'message': f'€{amount:.2f} toegevoegd aan je tegoed'
+        })
+    
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 

@@ -30,6 +30,19 @@
         </div>
 
         <div class="account-card">
+            <h2>Tegoed toevoegen</h2>
+            <form id="addBalanceForm" class="balance-form">
+                <div class="form-group">
+                    <label for="addAmount">Bedrag toe te voegen (€):</label>
+                    <input type="number" id="addAmount" min="0.01" step="0.01" required placeholder="Voer bedrag in">
+                </div>
+
+                <button type="submit" class="btn btn-success">Tegoed toevoegen</button>
+            </form>
+            <div id="balanceMessage"></div>
+        </div>
+
+        <div class="account-card">
             <h2>Wachtwoord wijzigen</h2>
             <form id="passwordForm" class="password-form">
                 <div class="form-group">

@@ -48,7 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
         passwordForm.addEventListener('submit', handlePasswordChange);
     }
     
-    const searchFilter = document.getElementById('searchFilter');
+    const addBalanceForm = document.getElementById('addBalanceForm');
+    if (addBalanceForm) {
+        addBalanceForm.addEventListener('submit', handleAddBalance);
+    }
+        const searchFilter = document.getElementById('searchFilter');
     if (searchFilter) {
         searchFilter.addEventListener('keyup', handleSearchFilter);
     }
@@ -521,6 +525,42 @@ async function handlePasswordChange(e) {
         if (response.ok) {
             showNotification(data.message, 'success');
             document.getElementById('passwordForm').reset();
+        } else {
+            showNotification(data.error, 'danger');
+        }
+    } catch (error) {
+        showNotification('Fout opgetreden: ' + error, 'danger');
+    }
+}
+
+async function handleAddBalance(e) {
+    e.preventDefault();
+    
+    const amount = parseFloat(document.getElementById('addAmount').value);
+    
+    if (isNaN(amount) || amount <= 0) {
+        showNotification('Voer een geldig bedrag in', 'danger');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/add-balance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                amount: amount
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification(`€${amount.toFixed(2)} toegevoegd!`, 'success');
+            document.getElementById('addBalanceForm').reset();
+            // Update balance display
+            document.querySelector('.balance').textContent = `€${data.new_balance.toFixed(2)}`;
         } else {
             showNotification(data.error, 'danger');
         }

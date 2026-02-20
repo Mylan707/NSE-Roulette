@@ -113,6 +113,7 @@ def calculate_payout(bet_type, bet_value, winning_number, bet_amount):
     return payout, win
 
 
+
 # ==================== ROUTES ====================
 
 @app.route('/')

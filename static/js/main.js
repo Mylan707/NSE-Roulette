@@ -9,6 +9,10 @@ let gameState = {
 // Roulette wheel colors
 const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 
+// Real European roulette wheel number order (clockwise), starting with 0
+const WHEEL_ORDER = [
+    0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26
+];
 // Chip colors based on bet amount
 const CHIP_COLORS = {
     low: '#ff6b6b',      // 1-10
@@ -59,22 +63,23 @@ function drawRouletteWheel() {
     
     const ctx = canvas.getContext('2d');
     const radius = Math.min(canvas.width, canvas.height) / 2;
-    const sliceAngle = (Math.PI * 2) / 37;
-    
-    for (let i = 0; i <= 36; i++) {
+    const sliceAngle = (Math.PI * 2) / WHEEL_ORDER.length;
+
+    for (let i = 0; i < WHEEL_ORDER.length; i++) {
+        const num = WHEEL_ORDER[i];
         const angle = i * sliceAngle - Math.PI / 2;
         const nextAngle = angle + sliceAngle;
-        
+
         // Determine color
         let color;
-        if (i === 0) {
+        if (num === 0) {
             color = '#00a854'; // Green for 0
-        } else if (RED_NUMBERS.includes(i)) {
+        } else if (RED_NUMBERS.includes(num)) {
             color = '#d9534f'; // Red
         } else {
             color = '#000'; // Black
         }
-        
+
         // Draw slice
         ctx.fillStyle = color;
         ctx.strokeStyle = '#fff';
@@ -84,18 +89,18 @@ function drawRouletteWheel() {
         ctx.lineTo(radius, radius);
         ctx.fill();
         ctx.stroke();
-        
+
         // Draw number
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
+
         const textAngle = angle + sliceAngle / 2;
         const textRadius = radius - 30;
         const x = radius + Math.cos(textAngle) * textRadius;
         const y = radius + Math.sin(textAngle) * textRadius;
-        ctx.fillText(i, x, y);
+        ctx.fillText(num, x, y);
     }
     
     // Draw center circle
@@ -328,12 +333,12 @@ async function spinWheel() {
     // Determine which number will win (multiple rotations + random end)
     const endDegree = Math.random() * 360;
     const totalRotation = 1080 + endDegree;  // 3 full spins + random
-    
-    // Calculate winning number based on final rotation
-    const degreesPerNumber = 360 / 37;
+
+    // Calculate winning number based on final rotation using wheel order
+    const degreesPerSlice = 360 / WHEEL_ORDER.length;
     const normalizedDegrees = totalRotation % 360;
-    // Use slice center to determine which wedge the ball will land on
-    const winningNumber = Math.floor((normalizedDegrees + degreesPerNumber / 2) / degreesPerNumber) % 37;
+    const winningIndex = Math.floor((normalizedDegrees + degreesPerSlice / 2) / degreesPerSlice) % WHEEL_ORDER.length;
+    const winningNumber = WHEEL_ORDER[winningIndex];
     
     // Animate ball
     const ballPath = document.getElementById('ballPath');
@@ -342,8 +347,8 @@ async function spinWheel() {
     // Set CSS custom property for final rotation
     ballPath.style.setProperty('--final-rotation', totalRotation + 'deg');
     
-    // Calculate the angle of the winning number
-    const winningAngle = (winningNumber * degreesPerNumber - 90) % 360;
+    // Calculate the angle of the winning slice (optional)
+    const winningAngle = (winningIndex * degreesPerSlice - 90) % 360;
     
     // Add spinning class (animation happens via CSS)
     ballPath.classList.add('spinning');

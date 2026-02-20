@@ -293,16 +293,14 @@ async function spinWheel() {
     gameState.isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     
-    // Determine which number will win (1 full rotation + random end)
+    // Determine which number will win (multiple rotations + random end)
     const endDegree = Math.random() * 360;
     const totalRotation = 1080 + endDegree;  // 3 full spins + random
     
     // Calculate winning number based on final rotation
     const degreesPerNumber = 360 / 37;
     const normalizedDegrees = totalRotation % 360;
-    // Getal 0 zit bovenaan (top = 270 degrees in rotation)
-    // We roteren van top position
-    let winningNumber = Math.round((normalizedDegrees + 90) / degreesPerNumber) % 37;
+    const winningNumber = Math.round(normalizedDegrees / degreesPerNumber) % 37;
     
     // Animate ball
     const ballPath = document.getElementById('ballPath');

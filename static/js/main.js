@@ -330,12 +330,15 @@ async function spinWheel() {
     // Calculate winning number based on final rotation using wheel order
     const degreesPerSlice = 360 / WHEEL_ORDER.length;
     const normalizedDegrees = totalRotation % 360;
-    // The ball is at the top (12 o'clock). After rotating the ballPath by +degrees,
-    // the slice at the top is the one whose original index moved by -degrees.
-    // Compute winningIndex by negating rotation and rounding to nearest slice.
-    let winningIndex = Math.round((-normalizedDegrees) / degreesPerSlice) % WHEEL_ORDER.length;
-    if (winningIndex < 0) winningIndex += WHEEL_ORDER.length;
+    // The ball is at the top (0 degrees). After rotating by +normalizedDegrees,
+    // the slice now at top is the one that was originally at angle (-normalizedDegrees + 90).
+    // Formula: i = round((-normalizedDegrees + 90) / degreesPerSlice) % 37
+    let winningIndex = Math.round((-normalizedDegrees + 90) / degreesPerSlice);
+    winningIndex = ((winningIndex % WHEEL_ORDER.length) + WHEEL_ORDER.length) % WHEEL_ORDER.length;
     const winningNumber = WHEEL_ORDER[winningIndex];
+    
+    // DEBUG: log to console
+    console.log(`Spin: totalRotation=${totalRotation}, normalizedDegrees=${normalizedDegrees}, degreesPerSlice=${degreesPerSlice.toFixed(2)}, winningIndex=${winningIndex}, winningNumber=${winningNumber}`);
     
     // Animate ball
     const ballPath = document.getElementById('ballPath');

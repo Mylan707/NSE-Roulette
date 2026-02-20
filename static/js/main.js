@@ -213,12 +213,42 @@ function handleTableCellClick(cell) {
     
     // Visual feedback
     cell.classList.add('active');
+    // Place chip visually on the table cell
+    placeChipOnCell(cell, bet);
     
     // Update display
     updateBetsDisplay();
     updateSpinButton();
     
     showSuccess(`€${betAmount.toFixed(2)} ingezet op ${getCellLabel(betType, betValue)}`);
+}
+
+// Create a visual chip on the given table cell for a bet
+function placeChipOnCell(cell, bet) {
+    if (!cell) return;
+    // ensure cell is positioned relative
+    if (getComputedStyle(cell).position === 'static') {
+        cell.style.position = 'relative';
+    }
+
+    const existing = cell.querySelectorAll('.chip');
+    const offset = existing.length * 6; // stack offset
+
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.dataset.betId = bet.id;
+    chip.style.position = 'absolute';
+    chip.style.width = '20px';
+    chip.style.height = '20px';
+    chip.style.borderRadius = '50%';
+    chip.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+    chip.style.right = (6 + offset) + 'px';
+    chip.style.bottom = (6 + offset) + 'px';
+    chip.style.background = getChipColor(bet.amount);
+    chip.style.border = '2px solid #fff';
+    chip.title = `${getCellLabel(bet.type, bet.value)} — €${bet.amount.toFixed(2)}`;
+
+    cell.appendChild(chip);
 }
 
 function getCellLabel(type, value) {
@@ -263,8 +293,10 @@ function removeBet(betId) {
     gameState.bets = gameState.bets.filter(b => b.id !== betId);
     
     // Remove active class from cells
-    document.querySelectorAll('.table-cell.active').forEach(cell => {
-        cell.classList.remove('active');
+    document.querySelectorAll(`.chip[data-bet-id="${betId}"]`).forEach(c => c.remove());
+    // If no chips left in a cell, remove active class
+    document.querySelectorAll('.table-cell').forEach(cell => {
+        if (!cell.querySelector('.chip')) cell.classList.remove('active');
     });
     
     updateBetsDisplay();
@@ -273,9 +305,9 @@ function removeBet(betId) {
 
 function clearAllBets() {
     gameState.bets = [];
-    document.querySelectorAll('.table-cell.active').forEach(cell => {
-        cell.classList.remove('active');
-    });
+    // remove all chips and active classes
+    document.querySelectorAll('.chip').forEach(c => c.remove());
+    document.querySelectorAll('.table-cell').forEach(cell => cell.classList.remove('active'));
     updateBetsDisplay();
     updateSpinButton();
 }
@@ -300,36 +332,81 @@ async function spinWheel() {
     // Calculate winning number based on final rotation
     const degreesPerNumber = 360 / 37;
     const normalizedDegrees = totalRotation % 360;
-    const winningNumber = Math.round(normalizedDegrees / degreesPerNumber) % 37;
+    // Use slice center to determine which wedge the ball will land on
+    const winningNumber = Math.floor((normalizedDegrees + degreesPerNumber / 2) / degreesPerNumber) % 37;
     
     // Animate ball
     const ballPath = document.getElementById('ballPath');
-    let rotation = 0;
-    const spinDuration = 3000;
-    const startTime = Date.now();
+    const ball = document.getElementById('rouletteBall');
     
+    // Set CSS custom property for final rotation
+    ballPath.style.setProperty('--final-rotation', totalRotation + 'deg');
+    
+    // Calculate the angle of the winning number
+    const winningAngle = (winningNumber * degreesPerNumber - 90) % 360;
+    
+    // Add spinning class (animation happens via CSS)
     ballPath.classList.add('spinning');
     
-    const spinAnimation = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / spinDuration, 1);
+    // Wait for animation to complete (5000ms = 5s)
+    setTimeout(() => {
+        ballPath.classList.remove('spinning');
+        // Keep the final rotation position
+        ballPath.style.transform = `rotate(${totalRotation}deg)`;
         
-        // Ease out curve
-        const easeProgress = 1 - Math.pow(1 - progress, 3);
-        rotation = easeProgress * totalRotation;
-        
-        ballPath.style.transform = `rotate(${rotation}deg)`;
-        
-        if (progress < 1) {
-            requestAnimationFrame(spinAnimation);
-        } else {
-            ballPath.classList.remove('spinning');
-            ballPath.style.transform = `rotate(${totalRotation}deg)`;
+        // Move ball to the exact winning number position (animate inward onto the slice center)
+        const canvas = document.getElementById('rouletteWheel');
+        const canvasRect = canvas.getBoundingClientRect();
+        const parentRect = canvas.offsetParent.getBoundingClientRect();
+        const canvasLeft = canvasRect.left - parentRect.left;
+        const canvasTop = canvasRect.top - parentRect.top;
+
+        const wheelRadius = Math.min(canvas.width, canvas.height) / 2; // 150
+        const textRadius = wheelRadius - 30; // same as drawRouletteWheel textRadius
+
+        // Compute wedge center angle (use slice center)
+        const sliceDeg = degreesPerNumber;
+        const wedgeCenterDeg = ((winningNumber + 0.5) * sliceDeg) - 90;
+        const angleRad = wedgeCenterDeg * Math.PI / 180;
+
+        // Final position where the number text is drawn on canvas
+        const finalX = canvasLeft + wheelRadius + Math.cos(angleRad) * textRadius;
+        const finalY = canvasTop + wheelRadius + Math.sin(angleRad) * textRadius;
+
+        // Position ball absolutely inside the wheel-container and animate to final coords
+        const wheelContainer = document.querySelector('.wheel-container');
+        const containerRect = wheelContainer.getBoundingClientRect();
+        const relLeft = finalX - containerRect.left;
+        const relTop = finalY - containerRect.top;
+
+        ball.style.position = 'absolute';
+        ball.style.transition = 'all 900ms cubic-bezier(0.22, 0.61, 0.36, 1)';
+        // start from current (ballPath) position; ensure visible
+        ball.style.display = '';
+
+        // small delay to allow transition setup
+        requestAnimationFrame(() => {
+            ball.style.left = relLeft + 'px';
+            ball.style.top = relTop + 'px';
+            ball.style.transform = 'translate(-50%, -50%)';
+        });
+
+        // after transition ends, finalize and submit
+        const onEnd = () => {
+            ball.removeEventListener('transitionend', onEnd);
+            // move ball out of the rotating path into the wheel container so it stays visible
+            wheelContainer.appendChild(ball);
+            // ensure absolute positioning relative to wheel container
+            ball.style.left = relLeft + 'px';
+            ball.style.top = relTop + 'px';
+            ball.style.transform = 'translate(-50%, -50%)';
+            // hide the rotating path (ball is now outside it)
+            ballPath.style.display = 'none';
+            // submit results
             submitBets(winningNumber);
-        }
-    };
-    
-    spinAnimation();
+        };
+        ball.addEventListener('transitionend', onEnd);
+    }, 5000);
 }
 
 // ==================== SUBMIT BETS ====================

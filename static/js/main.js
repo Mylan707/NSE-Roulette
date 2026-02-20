@@ -348,65 +348,17 @@ async function spinWheel() {
     // Add spinning class (animation happens via CSS)
     ballPath.classList.add('spinning');
     
-    // Wait for animation to complete (5000ms = 5s)
+    // Wait for animation to complete, then stop the path rotation and keep the ball stationary on the path
+    const spinDurationMs = 5000;
     setTimeout(() => {
+        // stop spinning animation and keep final rotation
         ballPath.classList.remove('spinning');
-        // Keep the final rotation position
         ballPath.style.transform = `rotate(${totalRotation}deg)`;
-        
-        // Move ball to the exact winning number position (animate inward onto the slice center)
-        const canvas = document.getElementById('rouletteWheel');
-        const canvasRect = canvas.getBoundingClientRect();
-        const parentRect = canvas.offsetParent.getBoundingClientRect();
-        const canvasLeft = canvasRect.left - parentRect.left;
-        const canvasTop = canvasRect.top - parentRect.top;
-
-        const wheelRadius = Math.min(canvas.width, canvas.height) / 2; // 150
-        const textRadius = wheelRadius - 30; // same as drawRouletteWheel textRadius
-
-        // Compute wedge center angle (use slice center)
-        const sliceDeg = degreesPerNumber;
-        const wedgeCenterDeg = ((winningNumber + 0.5) * sliceDeg) - 90;
-        const angleRad = wedgeCenterDeg * Math.PI / 180;
-
-        // Final position where the number text is drawn on canvas
-        const finalX = canvasLeft + wheelRadius + Math.cos(angleRad) * textRadius;
-        const finalY = canvasTop + wheelRadius + Math.sin(angleRad) * textRadius;
-
-        // Position ball absolutely inside the wheel-container and animate to final coords
-        const wheelContainer = document.querySelector('.wheel-container');
-        const containerRect = wheelContainer.getBoundingClientRect();
-        const relLeft = finalX - containerRect.left;
-        const relTop = finalY - containerRect.top;
-
-        ball.style.position = 'absolute';
-        ball.style.transition = 'all 900ms cubic-bezier(0.22, 0.61, 0.36, 1)';
-        // start from current (ballPath) position; ensure visible
-        ball.style.display = '';
-
-        // small delay to allow transition setup
-        requestAnimationFrame(() => {
-            ball.style.left = relLeft + 'px';
-            ball.style.top = relTop + 'px';
-            ball.style.transform = 'translate(-50%, -50%)';
-        });
-
-        // after transition ends, finalize and submit
-        const onEnd = () => {
-            ball.removeEventListener('transitionend', onEnd);
-            // move ball out of the rotating path into the wheel container so it stays visible
-            wheelContainer.appendChild(ball);
-            // ensure absolute positioning relative to wheel container
-            ball.style.left = relLeft + 'px';
-            ball.style.top = relTop + 'px';
-            ball.style.transform = 'translate(-50%, -50%)';
-            // hide the rotating path (ball is now outside it)
-            ballPath.style.display = 'none';
-            // submit results
-            submitBets(winningNumber);
-        };
-        ball.addEventListener('transitionend', onEnd);
-    }, 5000);
+        // do NOT move the ball to a specific number; leave it on the outer track (the ball remains a child of ballPath)
+        // keep the ballPath visible so the ball stays on the wheel
+        // submit results without moving the ball
+        submitBets(winningNumber);
+    }, spinDurationMs);
 }
 
 // ==================== SUBMIT BETS ====================

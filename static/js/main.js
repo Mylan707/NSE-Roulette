@@ -293,18 +293,24 @@ async function spinWheel() {
     gameState.isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     
-    // Get total bet amount
-    const totalBet = gameState.bets.reduce((sum, bet) => sum + bet.amount, 0);
+    // Determine which number will win (1 full rotation + random end)
+    const endDegree = Math.random() * 360;
+    const totalRotation = 1080 + endDegree;  // 3 full spins + random
     
-    // Animate wheel and ball
-    const canvas = document.getElementById('rouletteWheel');
-    const ball = document.getElementById('rouletteBall');
+    // Calculate winning number based on final rotation
+    const degreesPerNumber = 360 / 37;
+    const normalizedDegrees = totalRotation % 360;
+    // Getal 0 zit bovenaan (top = 270 degrees in rotation)
+    // We roteren van top position
+    let winningNumber = Math.round((normalizedDegrees + 90) / degreesPerNumber) % 37;
     
+    // Animate ball
+    const ballPath = document.getElementById('ballPath');
     let rotation = 0;
     const spinDuration = 3000;
     const startTime = Date.now();
     
-    ball.classList.add('spinning');
+    ballPath.classList.add('spinning');
     
     const spinAnimation = () => {
         const elapsed = Date.now() - startTime;
@@ -312,15 +318,16 @@ async function spinWheel() {
         
         // Ease out curve
         const easeProgress = 1 - Math.pow(1 - progress, 3);
-        rotation = easeProgress * 360 * 5;
+        rotation = easeProgress * totalRotation;
         
-        canvas.style.transform = `rotate(${rotation}deg)`;
+        ballPath.style.transform = `rotate(${rotation}deg)`;
         
         if (progress < 1) {
             requestAnimationFrame(spinAnimation);
         } else {
-            ball.classList.remove('spinning');
-            submitBets();
+            ballPath.classList.remove('spinning');
+            ballPath.style.transform = `rotate(${totalRotation}deg)`;
+            submitBets(winningNumber);
         }
     };
     
@@ -329,23 +336,24 @@ async function spinWheel() {
 
 // ==================== SUBMIT BETS ====================
 
-async function submitBets() {
+async function submitBets(winningNumber) {
     try {
-        // Submit all bets
-        let totalWinnings = 0;
-        let totalLosses = 0;
-        let results = [];
+        // Prepare all bets to send to server
+        const betsToSubmit = gameState.bets.map(bet => ({
+            type: bet.type,
+            value: bet.value,
+            amount: bet.amount
+        }));
         
-        // First spin the wheel once
+        // Submit all bets to server with the calculated winning number
         const spinResponse = await fetch('/api/spin', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                bet_amount: gameState.bets[0].amount,
-                bet_type: gameState.bets[0].type,
-                bet_value: gameState.bets[0].value
+                bets: betsToSubmit,
+                winning_number: winningNumber
             })
         });
         
@@ -358,16 +366,19 @@ async function submitBets() {
             return;
         }
         
-        const winningNumber = spinData.winning_number;
+        // Use server's winning number (safety check)
+        const serverWinningNumber = spinData.winning_number;
         
-        // Calculate results for each bet
+        // Calculate current bet results based on server's winning number
+        let results = [];
+        const totalWinnings = spinData.total_payout;
+        const totalLosses = spinData.total_loss;
+        
         gameState.bets.forEach(bet => {
-            const payout = calculatePayout(bet.type, bet.value, winningNumber, bet.amount);
+            const payout = calculatePayout(bet.type, bet.value, serverWinningNumber, bet.amount);
             if (payout > 0) {
-                totalWinnings += payout;
                 results.push(`✓ ${getCellLabel(bet.type, bet.value)}: +€${payout.toFixed(2)}`);
             } else {
-                totalLosses += bet.amount;
                 results.push(`✗ ${getCellLabel(bet.type, bet.value)}: -€${bet.amount.toFixed(2)}`);
             }
         });
@@ -376,7 +387,7 @@ async function submitBets() {
         await updateBalance();
         
         // Display results
-        displayResults(winningNumber, totalWinnings, totalLosses, results);
+        displayResults(serverWinningNumber, totalWinnings, totalLosses, results);
         
         // Clear bets
         clearAllBets();

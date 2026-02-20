@@ -217,52 +217,76 @@ def game():
 def api_spin():
     try:
         data = request.json
-        bet_amount = float(data.get('bet_amount', 0))
-        bet_type = data.get('bet_type', 'number')
-        bet_value = data.get('bet_value', '0')
+        bets = data.get('bets', [])
+        winning_number = data.get('winning_number')  # Optional, from client
+        
+        if not bets:
+            return jsonify({'error': 'Geen inzetten geplaatst'}), 400
         
         user = User.query.get(session['user_id'])
         
+        # Calculate total bet amount
+        total_bet = sum(bet['amount'] for bet in bets)
+        
         # Validatie
-        if bet_amount <= 0 or bet_amount > 1000:
+        if total_bet <= 0 or total_bet > 10000:
             return jsonify({'error': 'Ongeldig inzetbedrag'}), 400
         
-        if user.currency < bet_amount:
+        if user.currency < total_bet:
             return jsonify({'error': 'Onvoldoende tegoed'}), 400
         
-        # Spin het wiel
-        winning_number = random.randint(0, 36)
-        payout, win = calculate_payout(bet_type, bet_value, winning_number, bet_amount)
+        # If no winning number from client, generate random
+        if winning_number is None or winning_number < 0 or winning_number > 36:
+            winning_number = random.randint(0, 36)
+        else:
+            winning_number = int(winning_number)
+        
+        # Process all bets
+        total_payout = 0
+        bet_results = []
+        
+        for bet in bets:
+            bet_amount = bet['amount']
+            bet_type = bet['type']
+            bet_value = bet['value']
+            
+            payout, win = calculate_payout(bet_type, bet_value, winning_number, bet_amount)
+            
+            # Sla het spel op in database
+            game_round = GameRound(
+                user_id=user.id,
+                bet_amount=bet_amount,
+                bet_type=bet_type,
+                bet_value=bet_value,
+                winning_number=winning_number,
+                result='win' if win else 'lose',
+                payout=payout
+            )
+            
+            db.session.add(game_round)
+            total_payout += payout
+            
+            bet_results.append({
+                'type': bet_type,
+                'value': bet_value,
+                'amount': bet_amount,
+                'payout': payout,
+                'win': win
+            })
         
         # Update gebruiker currency
-        user.currency -= bet_amount
-        if win:
-            user.currency += payout
-            result = 'win'
-        else:
-            result = 'lose'
+        user.currency -= total_bet
+        user.currency += total_payout
         
-        # Sla het spel op in database
-        game_round = GameRound(
-            user_id=user.id,
-            bet_amount=bet_amount,
-            bet_type=bet_type,
-            bet_value=bet_value,
-            winning_number=winning_number,
-            result=result,
-            payout=payout
-        )
-        
-        db.session.add(game_round)
         db.session.commit()
         
         return jsonify({
             'success': True,
             'winning_number': winning_number,
-            'result': result,
-            'payout': payout,
+            'total_payout': total_payout,
+            'total_loss': total_bet - total_payout,
             'new_balance': round(user.currency, 2),
-            'message': f"Gewonnen: €{payout:.2f}" if win else "Helaas verloren!"
+            'bet_results': bet_results
         })
     
     except Exception as e:

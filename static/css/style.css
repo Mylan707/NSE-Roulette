@@ -466,6 +466,29 @@ main {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
+/* Ball rotation path */
+.ball-path {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: center;
+}
+
+.ball-path.spinning {
+    animation: spinBallPath 3s ease-out forwards;
+}
+
+@keyframes spinBallPath {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(1080deg);
+    }
+}
+
 /* Roulette Ball Animation */
 .roulette-ball {
     position: absolute;
@@ -473,24 +496,11 @@ main {
     height: 15px;
     background: #fff;
     border-radius: 50%;
-    top: 20px;
+    top: -7.5px;
     left: 50%;
     transform: translateX(-50%);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     z-index: 10;
-}
-
-.roulette-ball.spinning {
-    animation: spinBall 3s ease-out forwards;
-}
-
-@keyframes spinBall {
-    0% {
-        transform: translateX(-50%) rotate(0deg);
-    }
-    100% {
-        transform: translateX(-50%) rotate(1080deg);
-    }
 }
 
 /* Betting Table Layout */

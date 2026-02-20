@@ -421,7 +421,7 @@ main {
 /* ==================== GAME SECTION ==================== */
 .game-container {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: 1fr 380px;
     gap: 2rem;
     margin-bottom: 2rem;
 }
@@ -433,7 +433,7 @@ main {
 }
 
 .game-main {
-    background: white;
+    background: linear-gradient(135deg, #1a5c2d 0%, #0f3a1a 100%);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: var(--shadow-lg);
@@ -442,30 +442,351 @@ main {
 .game-main h1 {
     text-align: center;
     margin-bottom: 2rem;
-    color: var(--primary-color);
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.roulette-section {
-    text-align: center;
+.roulette-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.wheel-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 0 auto;
 }
 
 #rouletteWheel {
-    max-width: 100%;
-    height: auto;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    box-shadow: var(--shadow-lg);
-    margin-bottom: 2rem;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
-.spin-button-container {
+/* Roulette Ball Animation */
+.roulette-ball {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background: #fff;
+    border-radius: 50%;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.roulette-ball.spinning {
+    animation: spinBall 3s ease-out forwards;
+}
+
+@keyframes spinBall {
+    0% {
+        transform: translateX(-50%) rotate(0deg);
+    }
+    100% {
+        transform: translateX(-50%) rotate(1080deg);
+    }
+}
+
+/* Betting Table Layout */
+.betting-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 2px solid #00d084;
+}
+
+.table-section {
+    display: grid;
+}
+
+.zero-section {
+    grid-column: 1 / -1;
+}
+
+.table-cell {
+    padding: 12px;
+    border: 2px solid #00d084;
+    border-radius: 5px;
     text-align: center;
-    margin: 2rem 0;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    font-size: 0.9rem;
+}
+
+.table-cell:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0, 208, 132, 0.5);
+}
+
+/* Zero Cell */
+.zero-cell {
+    background: #00a854;
+    color: white;
+}
+
+.zero-cell.active {
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Color Cells */
+.color-section {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.red-cell {
+    background: #d9534f;
+    color: white;
+}
+
+.black-cell {
+    background: #222;
+    color: white;
+}
+
+.red-cell.active,
+.black-cell.active {
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Numbers Grid */
+.numbers-section {
+    grid-column: 1 / -1;
+}
+
+.numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+
+.table-cell[data-type="number"] {
+    background: linear-gradient(135deg, #1a5c2d, #0f3a1a);
+    color: white;
+    border: 2px solid #00d084;
+}
+
+.table-cell[data-type="number"]:hover {
+    background: linear-gradient(135deg, #2d7a45, #1a5a35);
+}
+
+.table-cell[data-type="number"].active {
+    box-shadow: inset 0 0 10px rgba(0, 208, 132, 0.8);
+}
+
+/* Even/Odd Cells */
+.odd-even-section {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.even-cell {
+    background: #3498db;
+    color: white;
+}
+
+.odd-cell {
+    background: #e74c3c;
+    color: white;
+}
+
+.even-cell.active,
+.odd-cell.active {
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Range Cells */
+.ranges-section {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.low-cell {
+    background: #9b59b6;
+    color: white;
+}
+
+.high-cell {
+    background: #f39c12;
+    color: white;
+}
+
+.low-cell.active,
+.high-cell.active {
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Chip Info */
+.chip-info {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #00d084;
+    color: white;
+}
+
+.chip-legend {
+    font-size: 0.9rem;
+}
+
+.chip-legend p {
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.bet-input {
+    width: 80px;
+    padding: 5px;
+    border: 1px solid #00d084;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-align: center;
+}
+
+.bet-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.chip-preview {
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 2px solid white;
+    margin-left: 10px;
+}
+
+/* Betting Section */
+.betting-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+}
+
+.balance-display {
+    background: var(--info-color);
+    color: white;
+    padding: 1rem;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.betting-form h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.instruction-box {
+    background: #f0f8ff;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--info-color);
+}
+
+.instruction-box p {
+    margin: 0 0 0.5rem 0;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.instruction-box ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.instruction-box li {
+    font-size: 0.85rem;
+    margin: 0.3rem 0;
+}
+
+.placed-bets {
+    margin: 1.5rem 0;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.placed-bets h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.bets-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.bet-item {
+    background: #f0f8ff;
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.bet-item-info {
+    flex: 1;
+}
+
+.bet-item-amount {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.bet-remove {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
 }
 
 #spinBtn {
-    padding: 2rem 4rem;
-    font-size: 1.5rem;
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.3rem;
     animation: pulse 2s infinite;
+    margin-bottom: 1rem;
+}
+
+#spinBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    animation: none;
 }
 
 @keyframes pulse {
@@ -477,8 +798,17 @@ main {
     }
 }
 
-#spinBtn:hover {
+#spinBtn:hover:not(:disabled) {
     animation: none;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
 }
 
 .game-result {
@@ -502,113 +832,6 @@ main {
 .result-content p {
     margin: 1rem 0;
     font-size: 1.2rem;
-}
-
-.betting-section {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: var(--shadow-lg);
-    height: fit-content;
-    position: sticky;
-    top: 100px;
-}
-
-.balance-display {
-    background: var(--info-color);
-    color: white;
-    padding: 1rem;
-    border-radius: 5px;
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 1.5rem;
-}
-
-.betting-form h2 {
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    text-align: center;
-}
-
-.bet-type-buttons {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.bet-type-btn {
-    padding: 0.6rem;
-    border: 2px solid var(--border-color);
-    background: white;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: var(--transition);
-    font-weight: 600;
-}
-
-.bet-type-btn:hover {
-    border-color: var(--info-color);
-}
-
-.bet-type-btn.active {
-    background: var(--info-color);
-    color: white;
-    border-color: var(--info-color);
-}
-
-.number-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.number-btn,
-.color-btn {
-    padding: 0.8rem;
-    border: 2px solid var(--border-color);
-    background: white;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: var(--transition);
-    font-weight: 600;
-}
-
-.number-btn:hover,
-.color-btn:hover {
-    border-color: var(--info-color);
-    background: #f0f8ff;
-}
-
-.number-btn.selected,
-.color-btn.selected {
-    background: var(--info-color);
-    color: white;
-    border-color: var(--info-color);
-}
-
-.color-btn {
-    padding: 1rem;
-    font-size: 1.1rem;
-}
-
-.color-btn.red {
-    border-color: red;
-}
-
-.color-btn.red.selected {
-    background: red;
-}
-
-.color-btn.black {
-    border-color: #000;
-}
-
-.color-btn.black.selected {
-    background: #000;
 }
 
 /* ==================== ONLINE PLAYERS ==================== */

@@ -1,38 +1,55 @@
-// ==================== GAME LOGIC ====================
+// ==================== GAME STATE ====================
 
-let selectedBetType = 'number';
-let selectedBetValue = '0';
-let isSpinning = false;
+let gameState = {
+    bets: [], // Array of {type, value, amount}
+    isSpinning: false,
+    selectedCell: null
+};
 
 // Roulette wheel colors
 const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 
-// ==================== INITIALIZE ==================== 
+// Chip colors based on bet amount
+const CHIP_COLORS = {
+    low: '#ff6b6b',      // 1-10
+    medium: '#4ecdc4',   // 11-50
+    high: '#ffe66d',     // 51-100
+    veryHigh: '#95e1d3'  // 100+
+};
+
+function getChipColor(amount) {
+    if (amount <= 10) return CHIP_COLORS.low;
+    if (amount <= 50) return CHIP_COLORS.medium;
+    if (amount <= 100) return CHIP_COLORS.high;
+    return CHIP_COLORS.veryHigh;
+}
+
+// ==================== INITIALIZE ====================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if we're on the game page
     const wheelCanvas = document.getElementById('rouletteWheel');
     if (wheelCanvas) {
         drawRouletteWheel();
+        generateNumbersCells();
         setupEventListeners();
         updateBalance();
+        updateChipPreview();
         
         // Update balance every 5 seconds
         setInterval(updateBalance, 5000);
     }
     
-    // Setup account form if present
     const passwordForm = document.getElementById('passwordForm');
     if (passwordForm) {
         passwordForm.addEventListener('submit', handlePasswordChange);
     }
     
-    // Setup search filter if present
     const searchFilter = document.getElementById('searchFilter');
     if (searchFilter) {
         searchFilter.addEventListener('keyup', handleSearchFilter);
     }
 });
+
 
 // ==================== DRAW ROULETTE WHEEL ====================
 
@@ -41,7 +58,7 @@ function drawRouletteWheel() {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const radius = canvas.width / 2;
+    const radius = Math.min(canvas.width, canvas.height) / 2;
     const sliceAngle = (Math.PI * 2) / 37;
     
     for (let i = 0; i <= 36; i++) {
@@ -70,12 +87,12 @@ function drawRouletteWheel() {
         
         // Draw number
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
         const textAngle = angle + sliceAngle / 2;
-        const textRadius = radius - 35;
+        const textRadius = radius - 30;
         const x = radius + Math.cos(textAngle) * textRadius;
         const y = radius + Math.sin(textAngle) * textRadius;
         ctx.fillText(i, x, y);
@@ -84,89 +101,78 @@ function drawRouletteWheel() {
     // Draw center circle
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(radius, radius, 15, 0, Math.PI * 2);
+    ctx.arc(radius, radius, 12, 0, Math.PI * 2);
     ctx.fill();
     
     // Draw pointer at top
-    ctx.fillStyle = '#d9534f';
+    ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.moveTo(radius - 10, 0);
-    ctx.lineTo(radius + 10, 0);
-    ctx.lineTo(radius, 20);
+    ctx.moveTo(radius - 8, 0);
+    ctx.lineTo(radius + 8, 0);
+    ctx.lineTo(radius, 15);
     ctx.closePath();
     ctx.fill();
+}
+
+// ==================== GENERATE NUMBER CELLS ====================
+
+function generateNumbersCells() {
+    const grid = document.getElementById('numbersGrid');
+    grid.innerHTML = '';
+    
+    for (let i = 1; i <= 36; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'table-cell';
+        cell.setAttribute('data-type', 'number');
+        cell.setAttribute('data-number', i);
+        cell.textContent = i;
+        
+        // Color code based on red/black
+        if (RED_NUMBERS.includes(i)) {
+            cell.style.borderColor = '#d9534f';
+        } else {
+            cell.style.borderColor = '#222';
+        }
+        
+        grid.appendChild(cell);
+    }
 }
 
 // ==================== EVENT LISTENERS ====================
 
 function setupEventListeners() {
-    // Bet type buttons
-    document.querySelectorAll('.bet-type-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.bet-type-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            selectedBetType = this.dataset.type;
-            updateBettingOptions();
+    // Table cell clicks
+    document.querySelectorAll('.table-cell').forEach(cell => {
+        cell.addEventListener('click', function() {
+            handleTableCellClick(this);
         });
     });
-    
-    // Number buttons
-    document.querySelectorAll('.number-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (selectedBetType === 'number') {
-                document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedBetValue = this.dataset.value;
-            }
-        });
-    });
-    
-    // Color buttons
-    document.querySelectorAll('.color-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (selectedBetType === 'color') {
-                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedBetValue = this.dataset.value;
-            }
-        });
-    });
-    
-    // Place bet button
-    const placeBetBtn = document.getElementById('placeBetBtn');
-    if (placeBetBtn) {
-        placeBetBtn.addEventListener('click', placeBet);
-    }
     
     // Spin button
     const spinBtn = document.getElementById('spinBtn');
     if (spinBtn) {
         spinBtn.addEventListener('click', spinWheel);
     }
-}
-
-function updateBettingOptions() {
-    const numberOptions = document.getElementById('numberOptions');
-    const colorOptions = document.getElementById('colorOptions');
     
-    if (selectedBetType === 'number') {
-        numberOptions.style.display = 'grid';
-        colorOptions.style.display = 'none';
-        document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
-    } else if (selectedBetType === 'color') {
-        numberOptions.style.display = 'none';
-        colorOptions.style.display = 'flex';
-        colorOptions.style.gap = '1rem';
-        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
-    } else {
-        numberOptions.style.display = 'none';
-        colorOptions.style.display = 'none';
+    // Clear bets button
+    const clearBetsBtn = document.getElementById('clearBetsBtn');
+    if (clearBetsBtn) {
+        clearBetsBtn.addEventListener('click', clearAllBets);
     }
+    
+    // Bet amount input - update chip preview
+    document.getElementById('betAmount').addEventListener('change', updateChipPreview);
 }
 
-// ==================== PLACE BET ====================
+function updateChipPreview() {
+    const amount = parseFloat(document.getElementById('betAmount').value) || 0;
+    const preview = document.getElementById('chipColorDisplay');
+    preview.style.backgroundColor = getChipColor(amount);
+}
 
-async function placeBet() {
+function handleTableCellClick(cell) {
+    if (gameState.isSpinning) return;
+    
     const betAmount = parseFloat(document.getElementById('betAmount').value);
     const balance = parseFloat(document.getElementById('balance').textContent);
     
@@ -181,104 +187,239 @@ async function placeBet() {
         return;
     }
     
-    if (selectedBetType === 'number' || selectedBetType === 'color') {
-        if (!selectedBetValue || selectedBetValue === '') {
-            showError('Selecteer een inzet');
-            return;
-        }
+    // Get bet info
+    let betType = cell.getAttribute('data-type');
+    let betValue = cell.getAttribute('data-number') || 
+                   cell.getAttribute('data-value') || 
+                   cell.getAttribute('data-type');
+    
+    // Determine the correct bet value for odd/even/high/low
+    if (betType === 'even' || betType === 'odd' || betType === 'low' || betType === 'high') {
+        betValue = betType;
+    } else if (betType === 'number') {
+        betValue = cell.getAttribute('data-number');
     }
     
-    // Store bet info
-    window.currentBet = {
+    // Create bet object
+    const bet = {
+        type: betType,
+        value: betValue,
         amount: betAmount,
-        type: selectedBetType,
-        value: selectedBetValue
+        id: Date.now() // Unique ID for removing bets
     };
     
-    document.getElementById('spinBtn').disabled = false;
-    showSuccess('Inzet geplaatst! Klik op SPIN om te spelen.');
+    // Add to bets array
+    gameState.bets.push(bet);
+    
+    // Visual feedback
+    cell.classList.add('active');
+    
+    // Update display
+    updateBetsDisplay();
+    updateSpinButton();
+    
+    showSuccess(`€${betAmount.toFixed(2)} ingezet op ${getCellLabel(betType, betValue)}`);
+}
+
+function getCellLabel(type, value) {
+    const labels = {
+        'number': `getal ${value}`,
+        'color': value,
+        'red': 'rood',
+        'black': 'zwart',
+        'odd': 'oneven',
+        'even': 'even',
+        'high': '19-36 (hoog)',
+        'low': '1-18 (laag)'
+    };
+    return labels[value] || labels[type] || value;
+}
+
+function updateBetsDisplay() {
+    const betsDisplay = document.getElementById('betsDisplay');
+    betsDisplay.innerHTML = '';
+    
+    gameState.bets.forEach(bet => {
+        const betItem = document.createElement('div');
+        betItem.className = 'bet-item';
+        
+        const chipColor = getChipColor(bet.amount);
+        const chipStyle = `background: ${chipColor}; width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-right: 8px;`;
+        
+        betItem.innerHTML = `
+            <div class="bet-item-info">
+                <span style="${chipStyle}"></span>
+                <span>${getCellLabel(bet.type, bet.value)}</span><br>
+                <span class="bet-item-amount">€${bet.amount.toFixed(2)}</span>
+            </div>
+            <button class="bet-remove" onclick="removeBet(${bet.id})">✕</button>
+        `;
+        
+        betsDisplay.appendChild(betItem);
+    });
+}
+
+function removeBet(betId) {
+    gameState.bets = gameState.bets.filter(b => b.id !== betId);
+    
+    // Remove active class from cells
+    document.querySelectorAll('.table-cell.active').forEach(cell => {
+        cell.classList.remove('active');
+    });
+    
+    updateBetsDisplay();
+    updateSpinButton();
+}
+
+function clearAllBets() {
+    gameState.bets = [];
+    document.querySelectorAll('.table-cell.active').forEach(cell => {
+        cell.classList.remove('active');
+    });
+    updateBetsDisplay();
+    updateSpinButton();
+}
+
+function updateSpinButton() {
+    const spinBtn = document.getElementById('spinBtn');
+    spinBtn.disabled = gameState.bets.length === 0;
 }
 
 // ==================== SPIN WHEEL ====================
 
 async function spinWheel() {
-    if (isSpinning) return;
-    if (!window.currentBet) {
-        showError('Plaats eerst een inzet');
-        return;
-    }
+    if (gameState.isSpinning || gameState.bets.length === 0) return;
     
-    isSpinning = true;
+    gameState.isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     
-    // Animate wheel spin
+    // Get total bet amount
+    const totalBet = gameState.bets.reduce((sum, bet) => sum + bet.amount, 0);
+    
+    // Animate wheel and ball
     const canvas = document.getElementById('rouletteWheel');
+    const ball = document.getElementById('rouletteBall');
+    
     let rotation = 0;
-    const spinDuration = 3000; // 3 seconds
+    const spinDuration = 3000;
     const startTime = Date.now();
+    
+    ball.classList.add('spinning');
     
     const spinAnimation = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / spinDuration, 1);
         
-        // Ease out curve for spinning
+        // Ease out curve
         const easeProgress = 1 - Math.pow(1 - progress, 3);
-        rotation = easeProgress * 360 * 5; // 5 full rotations
+        rotation = easeProgress * 360 * 5;
         
         canvas.style.transform = `rotate(${rotation}deg)`;
         
         if (progress < 1) {
             requestAnimationFrame(spinAnimation);
         } else {
-            // Spin finished, send bet to server
-            submitBet();
+            ball.classList.remove('spinning');
+            submitBets();
         }
     };
     
     spinAnimation();
 }
 
-// ==================== SUBMIT BET ====================
+// ==================== SUBMIT BETS ====================
 
-async function submitBet() {
+async function submitBets() {
     try {
-        const response = await fetch('/api/spin', {
+        // Submit all bets
+        let totalWinnings = 0;
+        let totalLosses = 0;
+        let results = [];
+        
+        // First spin the wheel once
+        const spinResponse = await fetch('/api/spin', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                bet_amount: window.currentBet.amount,
-                bet_type: window.currentBet.type,
-                bet_value: window.currentBet.value
+                bet_amount: gameState.bets[0].amount,
+                bet_type: gameState.bets[0].type,
+                bet_value: gameState.bets[0].value
             })
         });
         
-        const data = await response.json();
+        const spinData = await spinResponse.json();
         
-        if (response.ok) {
-            displayResult(data);
-            updateBalance();
-        } else {
-            showError(data.error);
+        if (!spinResponse.ok) {
+            showError(spinData.error);
+            gameState.isSpinning = false;
+            document.getElementById('spinBtn').disabled = false;
+            return;
         }
+        
+        const winningNumber = spinData.winning_number;
+        
+        // Calculate results for each bet
+        gameState.bets.forEach(bet => {
+            const payout = calculatePayout(bet.type, bet.value, winningNumber, bet.amount);
+            if (payout > 0) {
+                totalWinnings += payout;
+                results.push(`✓ ${getCellLabel(bet.type, bet.value)}: +€${payout.toFixed(2)}`);
+            } else {
+                totalLosses += bet.amount;
+                results.push(`✗ ${getCellLabel(bet.type, bet.value)}: -€${bet.amount.toFixed(2)}`);
+            }
+        });
+        
+        // Update balance
+        await updateBalance();
+        
+        // Display results
+        displayResults(winningNumber, totalWinnings, totalLosses, results);
+        
+        // Clear bets
+        clearAllBets();
+        
     } catch (error) {
         showError('Fout bij het versturen: ' + error);
     }
     
-    isSpinning = false;
-    document.getElementById('spinBtn').disabled = false;
+    gameState.isSpinning = false;
+    document.getElementById('spinBtn').disabled = true;
 }
 
-// ==================== DISPLAY RESULT ====================
+function calculatePayout(betType, betValue, winningNumber, betAmount) {
+    const isRed = RED_NUMBERS.includes(winningNumber);
+    const isBlack = winningNumber !== 0 && !isRed;
+    
+    if (betType === 'number') {
+        return winningNumber === parseInt(betValue) ? betAmount * 36 : 0;
+    } else if (betType === 'red') {
+        return isRed ? betAmount * 2 : 0;
+    } else if (betType === 'black') {
+        return isBlack ? betAmount * 2 : 0;
+    } else if (betType === 'odd') {
+        return winningNumber % 2 === 1 ? betAmount * 2 : 0;
+    } else if (betType === 'even') {
+        return winningNumber % 2 === 0 && winningNumber !== 0 ? betAmount * 2 : 0;
+    } else if (betType === 'high') {
+        return winningNumber >= 19 && winningNumber <= 36 ? betAmount * 2 : 0;
+    } else if (betType === 'low') {
+        return winningNumber >= 1 && winningNumber <= 18 ? betAmount * 2 : 0;
+    }
+    return 0;
+}
 
-function displayResult(data) {
+function displayResults(winningNumber, totalWinnings, totalLosses, results) {
     const resultDiv = document.getElementById('gameResult');
     const titleElement = document.getElementById('resultTitle');
     const numberElement = document.getElementById('resultNumber');
     const payoutElement = document.getElementById('resultPayout');
     
-    if (data.result === 'win') {
+    const isWin = totalWinnings > 0;
+    
+    if (isWin) {
         titleElement.textContent = '🎉 JE HEBT GEWONNEN!';
         titleElement.style.color = '#27ae60';
     } else {
@@ -286,14 +427,11 @@ function displayResult(data) {
         titleElement.style.color = '#e74c3c';
     }
     
-    numberElement.textContent = `Winning nummer: ${data.winning_number}`;
-    payoutElement.textContent = `${data.message}`;
+    numberElement.innerHTML = `<strong>Winning nummer: ${winningNumber}</strong><br><br>` + 
+                               results.join('<br>');
+    payoutElement.textContent = `Totaal winst: €${totalWinnings.toFixed(2)} | Verlies: €${totalLosses.toFixed(2)}`;
     
     resultDiv.style.display = 'block';
-    
-    // Reset bet
-    window.currentBet = null;
-    document.getElementById('betAmount').value = 10;
 }
 
 // ==================== UPDATE BALANCE ====================

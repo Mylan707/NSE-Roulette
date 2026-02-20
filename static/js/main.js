@@ -10,9 +10,8 @@ let gameState = {
 const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 
 // Real European roulette wheel number order (clockwise), starting with 0
-// This is the standard European roulette numbering (not American)
 const WHEEL_ORDER = [
-    0, 26, 3, 35, 12, 28, 7, 29, 18, 22, 9, 31, 14, 20, 1, 33, 16, 24, 5, 10, 23, 8, 30, 11, 36, 13, 27, 6, 34, 17, 25, 2, 21, 4, 19, 15, 32
+    0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26
 ];
 // Chip colors based on bet amount
 const CHIP_COLORS = {
@@ -110,7 +109,14 @@ function drawRouletteWheel() {
     ctx.arc(radius, radius, 12, 0, Math.PI * 2);
     ctx.fill();
     
-    // pointer removed — using ball center as measurement point
+    // Draw pointer at top
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(radius - 8, 0);
+    ctx.lineTo(radius + 8, 0);
+    ctx.lineTo(radius, 15);
+    ctx.closePath();
+    ctx.fill();
 }
 
 // ==================== GENERATE NUMBER CELLS ====================
@@ -324,22 +330,15 @@ async function spinWheel() {
     gameState.isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     
-    // Pick a random winning number
-    const winningIndex = Math.floor(Math.random() * WHEEL_ORDER.length);
-    const winningNumber = WHEEL_ORDER[winningIndex];
-    
-    // Calculate rotation needed to place this number at the top (0 degrees)
+    // Determine which number will win (multiple rotations + random end)
+    const endDegree = Math.random() * 360;
+    const totalRotation = 1080 + endDegree;  // 3 full spins + random
+
+    // Calculate winning number based on final rotation using wheel order
     const degreesPerSlice = 360 / WHEEL_ORDER.length;
-    const baseRotation = 90 - winningIndex * degreesPerSlice;
-    
-    // Add multiple spins (1080 = 3 full rotations) for visual effect
-    const randomExtra = Math.random() * 360;
-    const totalRotation = 1080 + baseRotation + randomExtra;
-    
-    console.log(`=== SPIN DEBUG ===`);
-    console.log(`Selected winningNumber=${winningNumber} (index ${winningIndex})`);
-    console.log(`baseRotation=${baseRotation.toFixed(2)}, randomExtra=${randomExtra.toFixed(2)}`);
-    console.log(`totalRotation=${totalRotation.toFixed(2)}`);
+    const normalizedDegrees = totalRotation % 360;
+    const winningIndex = Math.floor((normalizedDegrees + degreesPerSlice / 2) / degreesPerSlice) % WHEEL_ORDER.length;
+    const winningNumber = WHEEL_ORDER[winningIndex];
     
     // Animate ball
     const ballPath = document.getElementById('ballPath');
@@ -347,6 +346,9 @@ async function spinWheel() {
     
     // Set CSS custom property for final rotation
     ballPath.style.setProperty('--final-rotation', totalRotation + 'deg');
+    
+    // Calculate the angle of the winning slice (optional)
+    const winningAngle = (winningIndex * degreesPerSlice - 90) % 360;
     
     // Add spinning class (animation happens via CSS)
     ballPath.classList.add('spinning');
@@ -357,7 +359,9 @@ async function spinWheel() {
         // stop spinning animation and keep final rotation
         ballPath.classList.remove('spinning');
         ballPath.style.transform = `rotate(${totalRotation}deg)`;
-        // submit results with the predetermined winning number
+        // do NOT move the ball to a specific number; leave it on the outer track (the ball remains a child of ballPath)
+        // keep the ballPath visible so the ball stays on the wheel
+        // submit results without moving the ball
         submitBets(winningNumber);
     }, spinDurationMs);
 }

@@ -406,48 +406,86 @@ async function spinWheel() {
             submitBets(winningNumber);
         };
         ball.addEventListener('transitionend', onEnd);
-    }, 5000);
-}
+    // Animate ball: ensure ball is inside the rotating path at start
+    const ballPath = document.getElementById('ballPath');
+    const ball = document.getElementById('rouletteBall');
+    const wheelContainer = document.querySelector('.wheel-container');
 
-// ==================== SUBMIT BETS ====================
+    // If ball was reparented previously, move it back into the rotating path
+    if (ball.parentNode !== ballPath) {
+        ballPath.appendChild(ball);
+    }
 
-async function submitBets(winningNumber) {
-    try {
-        // Prepare all bets to send to server
-        const betsToSubmit = gameState.bets.map(bet => ({
-            type: bet.type,
-            value: bet.value,
-            amount: bet.amount
-        }));
-        
-        // Submit all bets to server with the calculated winning number
-        const spinResponse = await fetch('/api/spin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                bets: betsToSubmit,
-                winning_number: winningNumber
-            })
+    // Reset ball inline styles for spin
+    ball.style.transition = '';
+    ball.style.left = '50%';
+    ball.style.top = '-10px';
+    ball.style.transform = 'translateX(-50%)';
+    ball.style.display = '';
+    ballPath.style.display = '';
+    ballPath.style.transform = 'rotate(0deg)';
+
+    // Set CSS custom property for final rotation (for the rotating path)
+    ballPath.style.setProperty('--final-rotation', totalRotation + 'deg');
+
+    // Add spinning class (animation happens via CSS on the path)
+    ballPath.classList.add('spinning');
+
+    // After the path rotation finishes, animate the ball to the outer edge above the winning number
+    const spinDurationMs = 5000;
+    setTimeout(() => {
+        // stop spinning animation and keep final rotation
+        ballPath.classList.remove('spinning');
+        ballPath.style.transform = `rotate(${totalRotation}deg)`;
+
+        // Compute final landing position near outer rim (just inside white track) above the wedge center
+        const canvas = document.getElementById('rouletteWheel');
+        const canvasRect = canvas.getBoundingClientRect();
+        const containerRect = wheelContainer.getBoundingClientRect();
+        const canvasLeft = canvasRect.left - containerRect.left;
+        const canvasTop = canvasRect.top - containerRect.top;
+
+        const wheelRadius = Math.min(canvas.width, canvas.height) / 2;
+        // Position the ball closer to the outside edge (but inside the white track)
+        const landingRadius = wheelRadius - 14; // slightly inside the rim
+
+        // Use wedge center angle for accurate placement
+        const sliceDeg = degreesPerNumber;
+        const wedgeCenterDeg = ((winningNumber + 0.5) * sliceDeg) - 90;
+        const angleRad = wedgeCenterDeg * Math.PI / 180;
+
+        const finalX = canvasLeft + wheelRadius + Math.cos(angleRad) * landingRadius;
+        const finalY = canvasTop + wheelRadius + Math.sin(angleRad) * landingRadius;
+
+        // Reparent the ball to wheelContainer so it sits above the canvas and is not affected by path
+        wheelContainer.appendChild(ball);
+        ball.style.position = 'absolute';
+        // place ball at the current visual position (start) then transition to final
+        const startRect = ball.getBoundingClientRect();
+        const startLeft = startRect.left - containerRect.left + startRect.width / 2;
+        const startTop = startRect.top - containerRect.top + startRect.height / 2;
+        ball.style.left = startLeft + 'px';
+        ball.style.top = startTop + 'px';
+        ball.style.transform = 'translate(-50%, -50%)';
+
+        // animate into final rim position
+        requestAnimationFrame(() => {
+            ball.style.transition = 'all 900ms cubic-bezier(0.22, 0.61, 0.36, 1)';
+            ball.style.left = finalX + 'px';
+            ball.style.top = finalY + 'px';
+            ball.style.transform = 'translate(-50%, -50%)';
         });
-        
-        const spinData = await spinResponse.json();
-        
-        if (!spinResponse.ok) {
-            showError(spinData.error);
-            gameState.isSpinning = false;
-            document.getElementById('spinBtn').disabled = false;
-            return;
-        }
-        
-        // Use server's winning number (safety check)
-        const serverWinningNumber = spinData.winning_number;
-        
-        // Calculate current bet results based on server's winning number
-        let results = [];
-        const totalWinnings = spinData.total_payout;
-        const totalLosses = spinData.total_loss;
+
+        // After transition ends, keep ball visible until next spin
+        const onEnd = () => {
+            ball.removeEventListener('transitionend', onEnd);
+            // hide rotating path but leave ball visible
+            ballPath.style.display = 'none';
+            // do not call submitBets here; we'll call it after animation completes
+            submitBets(winningNumber);
+        };
+        ball.addEventListener('transitionend', onEnd);
+    }, spinDurationMs);
         
         gameState.bets.forEach(bet => {
             const payout = calculatePayout(bet.type, bet.value, serverWinningNumber, bet.amount);

@@ -109,14 +109,7 @@ function drawRouletteWheel() {
     ctx.arc(radius, radius, 12, 0, Math.PI * 2);
     ctx.fill();
     
-    // Draw pointer at top
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.moveTo(radius - 8, 0);
-    ctx.lineTo(radius + 8, 0);
-    ctx.lineTo(radius, 15);
-    ctx.closePath();
-    ctx.fill();
+    // pointer removed — using ball center as measurement point
 }
 
 // ==================== GENERATE NUMBER CELLS ====================
@@ -337,7 +330,11 @@ async function spinWheel() {
     // Calculate winning number based on final rotation using wheel order
     const degreesPerSlice = 360 / WHEEL_ORDER.length;
     const normalizedDegrees = totalRotation % 360;
-    const winningIndex = Math.floor((normalizedDegrees + degreesPerSlice / 2) / degreesPerSlice) % WHEEL_ORDER.length;
+    // The ball is at the top (12 o'clock). After rotating the ballPath by +degrees,
+    // the slice at the top is the one whose original index moved by -degrees.
+    // Compute winningIndex by negating rotation and rounding to nearest slice.
+    let winningIndex = Math.round((-normalizedDegrees) / degreesPerSlice) % WHEEL_ORDER.length;
+    if (winningIndex < 0) winningIndex += WHEEL_ORDER.length;
     const winningNumber = WHEEL_ORDER[winningIndex];
     
     // Animate ball

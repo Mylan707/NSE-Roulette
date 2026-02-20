@@ -324,28 +324,22 @@ async function spinWheel() {
     gameState.isSpinning = true;
     document.getElementById('spinBtn').disabled = true;
     
-    // Determine which number will win (multiple rotations + random end)
-    const endDegree = Math.random() * 360;
-    const totalRotation = 1080 + endDegree;  // 3 full spins + random
-
-    // Calculate winning number based on final rotation using wheel order
-    const degreesPerSlice = 360 / WHEEL_ORDER.length;
-    const normalizedDegrees = totalRotation % 360;
-    // The ball is at the top (0 degrees). After rotating by +normalizedDegrees,
-    // the slice now at top is the one that was originally at angle (-normalizedDegrees + 90).
-    // Formula: i = round((-normalizedDegrees + 90) / degreesPerSlice)
-    const rawIndex = (-normalizedDegrees + 90) / degreesPerSlice;
-    let winningIndex = Math.round(rawIndex);
-    // Ensure modulo is done correctly for negative numbers
-    while (winningIndex < 0) winningIndex += WHEEL_ORDER.length;
-    winningIndex = winningIndex % WHEEL_ORDER.length;
+    // Pick a random winning number
+    const winningIndex = Math.floor(Math.random() * WHEEL_ORDER.length);
     const winningNumber = WHEEL_ORDER[winningIndex];
     
-    // DEBUG: log to console
+    // Calculate rotation needed to place this number at the top (0 degrees)
+    const degreesPerSlice = 360 / WHEEL_ORDER.length;
+    const baseRotation = 90 - winningIndex * degreesPerSlice;
+    
+    // Add multiple spins (1080 = 3 full rotations) for visual effect
+    const randomExtra = Math.random() * 360;
+    const totalRotation = 1080 + baseRotation + randomExtra;
+    
     console.log(`=== SPIN DEBUG ===`);
-    console.log(`totalRotation=${totalRotation}, normalized=${normalizedDegrees.toFixed(2)}`);
-    console.log(`degreesPerSlice=${degreesPerSlice.toFixed(2)}, rawIndex=${rawIndex.toFixed(4)}`);
-    console.log(`winningIndex=${winningIndex}, winningNumber=${winningNumber}`);
+    console.log(`Selected winningNumber=${winningNumber} (index ${winningIndex})`);
+    console.log(`baseRotation=${baseRotation.toFixed(2)}, randomExtra=${randomExtra.toFixed(2)}`);
+    console.log(`totalRotation=${totalRotation.toFixed(2)}`);
     
     // Animate ball
     const ballPath = document.getElementById('ballPath');
@@ -353,9 +347,6 @@ async function spinWheel() {
     
     // Set CSS custom property for final rotation
     ballPath.style.setProperty('--final-rotation', totalRotation + 'deg');
-    
-    // Calculate the angle of the winning slice (optional)
-    const winningAngle = (winningIndex * degreesPerSlice - 90) % 360;
     
     // Add spinning class (animation happens via CSS)
     ballPath.classList.add('spinning');
@@ -366,9 +357,7 @@ async function spinWheel() {
         // stop spinning animation and keep final rotation
         ballPath.classList.remove('spinning');
         ballPath.style.transform = `rotate(${totalRotation}deg)`;
-        // do NOT move the ball to a specific number; leave it on the outer track (the ball remains a child of ballPath)
-        // keep the ballPath visible so the ball stays on the wheel
-        // submit results without moving the ball
+        // submit results with the predetermined winning number
         submitBets(winningNumber);
     }, spinDurationMs);
 }

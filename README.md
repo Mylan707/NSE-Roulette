@@ -129,14 +129,22 @@ Dit project is gelicentieerd onder de MIT Licentie.
 ## Inloggen voor becijfering:
 
 Voorbeeld inloggegevens:
+
 E-mail:  gebruiker@oplevering.nl
+
 Gebruikersnaam:  Gebruiker
+
 Wachtwoord:  Wachtwoord123
+
 (Mag natuurlijk ook eigen account aanmaken)
 
+
 Inloggen als admin:
+
 http://localhost:5000/admin
+
 User: admin
+
 Password: admin
 
 

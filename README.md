@@ -116,10 +116,7 @@ Open je webbrowser en ga naar: **http://localhost:5000**
 
 Dit project is gelicentieerd onder de MIT Licentie.
 
-## 📧 Contact & Support
 
-- **Email**: mylaneling6@gmail.com
-- **GitHub**: Mylan707
 
 ---
 

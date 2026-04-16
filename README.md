@@ -125,4 +125,19 @@ Dit project is gelicentieerd onder de MIT Licentie.
 
 **Veel plezier met spelen! Speel bewust en verantwoord! 🎰**
 
-*Laatst geupdate: April8 2026*
+
+## Inloggen voor becijfering:
+
+Voorbeeld inloggegevens:
+E-mail:  gebruiker@oplevering.nl
+Gebruikersnaam:  Gebruiker
+Wachtwoord:  Wachtwoord123
+(Mag natuurlijk ook eigen account aanmaken)
+
+Inloggen als admin:
+http://localhost:5000/admin
+User: admin
+Password: admin
+
+
+*Laatst geupdate: April 2026*

@@ -15,7 +15,6 @@ Een interactieve online roulette site gebouwd met Flask. Registreer met je email
 - **Dashboard**: Bekijk je statistieken en recente spellen
 - **Speel Historie**: Volledige geschiedenis van alle je spellen
 - **Account Management**: Wijzig je wachtwoord
-- **Multiplayer**: Zie welke andere spelers online zijn
 - **Responsief Design**: Werkt perfect op desktop, tablet en mobiel
 
 ## 📋 Vereisten
@@ -80,40 +79,9 @@ Open je webbrowser en ga naar: **http://localhost:5000**
 - Zie je **Spelgeschiedenis** voor alle vorige spellen
 - **Wijzig je wachtwoord** in Account instellingen
 
-## 📁 Projectstructuur
-
-```
-NSE-Roulette/
-├── NSE-Roulette.py           # Hoofdapplicatiebestand (Flask app)
-├── requirements.txt           # Python dependenties
-├── README.md                  # Deze file
-├── roulette.db               # SQLite database (auto aangemaakt)
-├── static/
-│   ├── css/
-│   │   └── style.css         # Alle styling
-│   └── js/
-│       ├── main.js           # Algemene functies
-│       └── game.js           # Roulette game logica
-└── templates/
-    ├── base.html             # Base template (navbar/footer)
-    ├── login.html            # Login pagina
-    ├── register.html         # Registratiepagina
-    ├── dashboard.html        # Hoofddashboard
-    ├── game.html             # Speelscherm
-    ├── account.html          # Accountinstellingen
-    ├── history.html          # Spelgeschiedenis
-    ├── 404.html              # Niet gevonden pagina
-    └── 500.html              # Serverfout pagina
-```
 
 ## ⚙️ Configuratie
 
-Open `NSE-Roulette.py` en wijzig deze instellingen:
-
-```python
-app.config['SECRET_KEY'] = 'your-secret-key-change-this'  # Wijzig dit!
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///roulette.db'  # Database locatie
-```
 
 **Standaardwaarden:**
 - Startbalans: €100
@@ -144,28 +112,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///roulette.db'  # Database loca
 - SQL injection bescherming via SQLAlchemy
 - CSRF bescherming ingebouwd
 
-## 🚀 Tips voor Production
-
-Voor gebruik op het internet:
-```python
-# In NSE-Roulette.py:
-app.run(debug=False, host='0.0.0.0', port=5000)  # Niet debug=True!
-
-# Wijzig de SECRET_KEY naar iets willekeurigs:
-app.config['SECRET_KEY'] = 'super-geheime-sleutel-1234567890'
-
-# Installeer gunicorn: pip install gunicorn
-# Start met: gunicorn NSE-Roulette:app
-```
-
-## 🤝 Bijdragen
-
-Bijdragen zijn welkom! Je kunt:
-- Bug fixes indienen
-- Nieuwe features voorstellen
-- Code verbeteren
-- Documentatie uitbreiden
-
 ## 📝 Licentie
 
 Dit project is gelicentieerd onder de MIT Licentie.
@@ -179,4 +125,4 @@ Dit project is gelicentieerd onder de MIT Licentie.
 
 **Veel plezier met spelen! Speel bewust en verantwoord! 🎰**
 
-*Laatst geupdate: Februari 2026*
+*Laatst geupdate: April8 2026*
